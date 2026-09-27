@@ -46,6 +46,11 @@ test('Explore: run a TestData query, split the pane, and restore both panes from
   await expect(panes).toHaveCount(2);
   await snap(page, 'split-two-panes');
 
+  // Explore syncs pane state to the URL asynchronously after split.
+  await expect
+    .poll(() => Object.keys(JSON.parse(new URL(page.url()).searchParams.get('panes') ?? '{}')).length)
+    .toBe(2);
+
   const splitUrl = page.url();
   await page.goto('/');
   await page.goto(splitUrl);
