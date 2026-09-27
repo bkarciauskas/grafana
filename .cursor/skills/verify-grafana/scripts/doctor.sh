@@ -20,11 +20,13 @@ echo "verify-grafana doctor: $VERIFY_URL (run dir $VERIFY_RUN_DIR)"
 kill -0 "$BACKEND_PANE_PID" 2>/dev/null && ok "backend session alive (pid $BACKEND_PANE_PID)" || bad "backend session gone"
 if [ -n "$FRONTEND_PANE_PID" ]; then
   kill -0 "$FRONTEND_PANE_PID" 2>/dev/null && ok "frontend watcher alive (pid $FRONTEND_PANE_PID)" || bad "frontend watcher gone"
-  last=$(grep -E 'compiled (successfully|with)' "$VERIFY_RUN_DIR/frontend.log" 2>/dev/null | tail -1)
+  # webpackbar logs "Compiling Grafana" at the start of each (re)build and "Grafana: Compiled ..." at the end.
+  last=$(grep -E 'Grafana: Compil|Compiling Grafana' "$VERIFY_RUN_DIR/frontend.log" 2>/dev/null | tail -1)
   case "$last" in
-    *error*) bad "webpack last compile has errors: $last" ;;
+    *rror*) bad "webpack last compile has errors: $last" ;;
+    *"Compiling Grafana"*) bad "webpack rebuild in progress; re-run doctor when it finishes" ;;
     "") bad "webpack has not finished a compile yet" ;;
-    *) ok "webpack: $last" ;;
+    *) ok "webpack: ${last#*] }" ;;
   esac
 else
   warn "frontend watcher not running (--backend-only): UI reflects the existing public/build"

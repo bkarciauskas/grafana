@@ -58,13 +58,15 @@ EOF
 
 start=$(date +%s)
 if [ "$FRONTEND" = 1 ]; then
-  log "waiting for webpack first compile (~1-3 min cold)..."
-  until grep -qE 'compiled (successfully|with)' "$VERIFY_RUN_DIR/frontend.log" 2>/dev/null; do
+  # `yarn start` runs through nx, which first builds workspace packages that print their own
+  # "webpack ... compiled" lines; only webpackbar's "Grafana: Compiled" marks the app bundle.
+  log "waiting for the Grafana bundle compile (~90s cold, ~15s with webpack cache)..."
+  until grep -q 'Grafana: Compiled' "$VERIFY_RUN_DIR/frontend.log" 2>/dev/null; do
     if ! kill -0 "$FRONTEND_PANE_PID" 2>/dev/null; then log "frontend exited; see $VERIFY_RUN_DIR/frontend.log"; exit 1; fi
     [ $(( $(date +%s) - start )) -gt 900 ] && { log "frontend not ready after 15 min"; exit 1; }
     sleep 5
   done
-  grep -E 'compiled (successfully|with)' "$VERIFY_RUN_DIR/frontend.log" | tail -1 >&2
+  grep 'Grafana: Compiled' "$VERIFY_RUN_DIR/frontend.log" | tail -1 >&2
   log "frontend compiled after $(( $(date +%s) - start ))s"
 fi
 

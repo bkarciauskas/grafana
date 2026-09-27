@@ -42,9 +42,9 @@ What it does:
 - Backend: `make run` in tmux `verify-grafana-backend`, log `/tmp/verify-grafana/backend.log`. Air hot-reloads Go/ini/html/json changes under `apps conf pkg public/views`.
 - Frontend: `yarn start` (webpack `--watch`, no port) in tmux `verify-grafana-frontend`, log `/tmp/verify-grafana/frontend.log`. It writes `public/build`; the backend serves it.
 
-Ready when the script prints `backend healthy after Ns`. It waits for `compiled successfully|with` in the frontend log, then `GET /api/health` = 200. Measured on a cloud VM: webpack first compile ~90 s, whole launch ~2m45s (backend build overlaps). A cold Go cache can make the first backend build take 3-6 min. Timeouts: 15 min frontend, 25 min backend.
+Ready when the script prints `backend healthy after Ns`. First it waits for webpackbar's `Grafana: Compiled` line in the frontend log, then for `GET /api/health` = 200. Don't wait on a plain `webpack ... compiled` line instead: `yarn start` runs through nx, which first builds several workspace packages that each print one. Measured on a cloud VM: cold launch ~2m45s (Grafana bundle ~90 s, the backend build overlaps it). A warm relaunch takes about 40 s to 1 min (webpack cache, air reuses Go build cache). A cold Go cache can make the first backend build take 3-6 min. Timeouts: 15 min frontend, 25 min backend.
 
-Watch live: `tmux attach -t verify-grafana-backend` (detach `Ctrl-b d`). After editing frontend code, wait for a new `compiled` line in `frontend.log` before driving. After editing Go, wait for air's rebuild and `/api/health`.
+Watch live: `tmux attach -t verify-grafana-backend` (detach `Ctrl-b d`). After editing frontend code, wait for a new `Grafana: Compiled` line in `frontend.log` before driving (doctor fails while a rebuild is in progress). After editing Go, wait for air's rebuild and `/api/health`.
 
 ## Doctor
 
@@ -94,7 +94,8 @@ Every `drive.sh` run writes to a new folder `$VERIFY_EVIDENCE_ROOT/<UTC-timestam
 run-info.txt            spec, url, git HEAD, dirty file count, /api/health, exit_code
 playwright.log          console output
 screenshots/NN-*.png    step screenshots from snap(), in order
-test-results/<test>/    video.webm, trace.zip (open with `yarn playwright show-trace <path>`), final screenshot
+test-results/<test>/    video.webm = the driven page (video-1.webm is a helper page plugin-e2e fixtures open; usually
+                        stays on Home), trace.zip (open with `yarn playwright show-trace <path>`), final screenshots
 html-report/            Playwright HTML report
 results.json            machine-readable results
 ```
