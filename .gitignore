@@ -73,12 +73,17 @@ public/css/*.min.css
 .vscode/
 !.vscode/launch.json
 .vs/
-.cursor/
+.cursor/*
 .devcontainer/
 .claude/
 
 # Claude skills everyone should have
 !.claude/skills/add-e2e-selectors
+
+# Cursor skills everyone should have
+!.cursor/skills/
+.cursor/skills/*
+!.cursor/skills/verify-grafana/
 
 .eslintcache
 .stylelintcache
